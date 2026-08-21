@@ -1,4 +1,5 @@
 <?php
+
 namespace CT275\Labs;
 
 use PDO;
@@ -11,6 +12,7 @@ class Contact
     public string $name = '';
     public string $phone = '';
     public string $notes = '';
+    public ?string $avatar = null;
     public string $created_at = '';
     public string $updated_at = '';
 
@@ -25,8 +27,10 @@ class Contact
         $this->name = $row['name'];
         $this->phone = $row['phone'];
         $this->notes = $row['notes'];
+        $this->avatar = $row['avatar'] ?? null;
         $this->created_at = $row['created_at'];
         $this->updated_at = $row['updated_at'];
+
         return $this;
     }
 
@@ -39,6 +43,7 @@ class Contact
             $contact = new Contact($this->db);
             $contacts[] = $contact->fillFromDbRow($row);
         }
+
         return $contacts;
     }
 
@@ -46,6 +51,7 @@ class Contact
     {
         $statement = $this->db->prepare('SELECT COUNT(*) FROM contacts');
         $statement->execute();
+
         return (int) $statement->fetchColumn();
     }
 
@@ -60,6 +66,7 @@ class Contact
             $contact = new Contact($this->db);
             $contacts[] = $contact->fillFromDbRow($row);
         }
+
         return $contacts;
     }
 
@@ -67,38 +74,12 @@ class Contact
     {
         $statement = $this->db->prepare('SELECT * FROM contacts WHERE id = :id');
         $statement->execute(['id' => $id]);
+
         if ($row = $statement->fetch()) {
             return $this->fillFromDbRow($row);
         }
-        return null;
-    }
 
-    public function save(): bool
-    {
-        if ($this->id >= 0) {
-            $statement = $this->db->prepare(
-                'UPDATE contacts SET name = :name, phone = :phone, notes = :notes, updated_at = NOW() WHERE id = :id'
-            );
-            return $statement->execute([
-                'name' => $this->name,
-                'phone' => $this->phone,
-                'notes' => $this->notes,
-                'id' => $this->id
-            ]);
-        } else {
-            $statement = $this->db->prepare(
-                'INSERT INTO contacts (name, phone, notes, created_at, updated_at) VALUES (:name, :phone, :notes, NOW(), NOW())'
-            );
-            $result = $statement->execute([
-                'name' => $this->name,
-                'phone' => $this->phone,
-                'notes' => $this->notes
-            ]);
-            if ($result) {
-                $this->id = (int) $this->db->lastInsertId();
-            }
-            return $result;
-        }
+        return null;
     }
 
     public function validate(array $data): array
@@ -108,39 +89,74 @@ class Contact
         if (empty($data['name'])) {
             $errors['name'] = 'Vui lòng nhập tên liên hệ.';
         } elseif (strlen($data['name']) > 255) {
-            $errors['name'] = 'Tên không được vượt quá 255 ký tự.';
+            $errors['name'] = 'Tên không vượt quá 255 ký tự.';
         }
 
         if (empty($data['phone'])) {
             $errors['phone'] = 'Vui lòng nhập số điện thoại.';
         } elseif (strlen($data['phone']) > 15) {
-            $errors['phone'] = 'Số điện thoại không được vượt quá 15 ký tự.';
+            $errors['phone'] = 'Số điện thoại không vượt quá 15 ký tự.';
         }
 
         if (empty($data['notes'])) {
             $errors['notes'] = 'Vui lòng nhập ghi chú.';
         } elseif (strlen($data['notes']) > 255) {
-            $errors['notes'] = 'Ghi chú không được vượt quá 255 ký tự.';
+            $errors['notes'] = 'Ghi chú không vượt quá 255 ký tự.';
         }
 
         return $errors;
     }
 
-    /**
-     * Gán dữ liệu từ mảng vào thuộc tính đối tượng
-     */
     public function fill(array $data): Contact
     {
         $this->name = $data['name'] ?? '';
         $this->phone = $data['phone'] ?? '';
         $this->notes = $data['notes'] ?? '';
-        
+        if (isset($data['avatar'])) {
+            $this->avatar = $data['avatar'];
+        }
+
         return $this;
+    }
+
+    public function save(): bool
+    {
+        if ($this->id >= 0) {
+            $statement = $this->db->prepare(
+                'UPDATE contacts SET name = :name, phone = :phone, notes = :notes, avatar = :avatar, updated_at = NOW() WHERE id = :id'
+            );
+
+            return $statement->execute([
+                'name'   => $this->name,
+                'phone'  => $this->phone,
+                'notes'  => $this->notes,
+                'avatar' => $this->avatar,
+                'id'     => $this->id,
+            ]);
+        } else {
+            $statement = $this->db->prepare(
+                'INSERT INTO contacts (name, phone, notes, avatar, created_at, updated_at) VALUES (:name, :phone, :notes, :avatar, NOW(), NOW())'
+            );
+
+            $result = $statement->execute([
+                'name'   => $this->name,
+                'phone'  => $this->phone,
+                'notes'  => $this->notes,
+                'avatar' => $this->avatar,
+            ]);
+
+            if ($result) {
+                $this->id = (int) $this->db->lastInsertId();
+            }
+
+            return $result;
+        }
     }
 
     public function delete(): bool
     {
         $statement = $this->db->prepare('DELETE FROM contacts WHERE id = :id');
+
         return $statement->execute(['id' => $this->id]);
     }
 }
