@@ -44,6 +44,7 @@ include_once __DIR__ . '/../src/partials/header.php';
         <table id="contacts" class="table table-striped table-bordered">
           <thead>
             <tr>
+              <th scope="col">Avatar</th>
               <th scope="col">Name</th>
               <th scope="col">Phone</th>
               <th scope="col">Date Created</th>
@@ -52,26 +53,35 @@ include_once __DIR__ . '/../src/partials/header.php';
             </tr>
           </thead>
           <tbody>
-            <?php foreach ($contacts as $c): ?>
-              <tr>
-                <td><?= html_escape($c->name) ?></td>
-                <td><?= html_escape($c->phone) ?></td>
-                <td><?= html_escape(date("d-m-Y", strtotime($c->created_at))) ?></td>
-                <td><?= html_escape($c->notes) ?></td>
-                <td class="d-flex justify-content-center">
-                  <a href="<?= '/edit.php?id=' . $c->id ?>" class="btn btn-xs btn-warning me-1">
-                    <i alt="Edit" class="fa fa-pencil"></i> Edit
-                  </a>
-                  <form action="/delete.php" method="POST">
-                    <input type="hidden" name="id" value="<?= $c->id ?>">
-                    <button type="submit" class="btn btn-xs btn-danger" name="delete-contact">
-                      <i alt="Delete" class="fa fa-trash"></i> Delete
-                    </button>
-                  </form>
-                </td>
-              </tr>
-            <?php endforeach; ?>
-          </tbody>
+  <?php foreach ($contacts as $c): ?>
+    <tr>
+      <td class="text-center align-middle">
+        <?php if ($c->avatar): ?>
+          <img src="<?= html_escape($c->avatar) ?>" alt="Avatar" class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover;">
+        <?php else: ?>
+          <span class="badge bg-secondary">No image</span>
+        <?php endif; ?>
+      </td>
+      <td class="align-middle"><?= html_escape($c->name) ?></td>
+      <td class="align-middle"><?= html_escape($c->phone) ?></td>
+      <td class="align-middle"><?= html_escape(date("d-m-Y", strtotime($c->created_at))) ?></td>
+      <td class="align-middle"><?= html_escape($c->notes) ?></td>
+      <td class="text-center align-middle">
+        <div class="d-flex justify-content-center">
+          <a href="<?= '/edit.php?id=' . $c->id ?>" class="btn btn-xs btn-warning me-1">
+            <i alt="Edit" class="fa fa-pencil"></i> Edit
+          </a>
+          <form action="/delete.php" method="POST">
+            <input type="hidden" name="id" value="<?= $c->id ?>">
+            <button type="submit" class="btn btn-xs btn-danger" name="delete-contact">
+              <i alt="Delete" class="fa fa-trash"></i> Delete
+            </button>
+          </form>
+        </div>
+      </td>
+    </tr>
+  <?php endforeach; ?>
+</tbody>
         </table>
         <!-- Table Ends Here -->
 
