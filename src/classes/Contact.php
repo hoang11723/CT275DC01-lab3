@@ -101,6 +101,43 @@ class Contact
         }
     }
 
+    public function validate(array $data): array
+    {
+        $errors = [];
+
+        if (empty($data['name'])) {
+            $errors['name'] = 'Vui lòng nhập tên liên hệ.';
+        } elseif (strlen($data['name']) > 255) {
+            $errors['name'] = 'Tên không được vượt quá 255 ký tự.';
+        }
+
+        if (empty($data['phone'])) {
+            $errors['phone'] = 'Vui lòng nhập số điện thoại.';
+        } elseif (strlen($data['phone']) > 15) {
+            $errors['phone'] = 'Số điện thoại không được vượt quá 15 ký tự.';
+        }
+
+        if (empty($data['notes'])) {
+            $errors['notes'] = 'Vui lòng nhập ghi chú.';
+        } elseif (strlen($data['notes']) > 255) {
+            $errors['notes'] = 'Ghi chú không được vượt quá 255 ký tự.';
+        }
+
+        return $errors;
+    }
+
+    /**
+     * Gán dữ liệu từ mảng vào thuộc tính đối tượng
+     */
+    public function fill(array $data): Contact
+    {
+        $this->name = $data['name'] ?? '';
+        $this->phone = $data['phone'] ?? '';
+        $this->notes = $data['notes'] ?? '';
+        
+        return $this;
+    }
+
     public function delete(): bool
     {
         $statement = $this->db->prepare('DELETE FROM contacts WHERE id = :id');
