@@ -5,23 +5,37 @@ use CT275\Labs\Contact;
 
 $contact = new Contact($PDO);
 
-// Lấy id từ URL hoặc form submit
 $id = isset($_REQUEST['id']) ? filter_var($_REQUEST['id'], FILTER_VALIDATE_INT) : false;
 
-// Nếu không có id hoặc không tìm thấy contact, chuyển hướng về trang chủ
 if (!$id || !($contact->find($id))) {
     redirect('/');
 }
 
 $errors = [];
 
-// Xử lý khi người dùng submit form (POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contactData = [
-        'name'  => $_POST['name'] ?? '',
-        'phone' => $_POST['phone'] ?? '',
-        'notes' => $_POST['notes'] ?? '',
+        'name'   => $_POST['name'] ?? '',
+        'phone'  => $_POST['phone'] ?? '',
+        'notes'  => $_POST['notes'] ?? '',
+        'avatar' => $contact->avatar // Giữ đường dẫn avatar cũ làm mặc định
     ];
+
+    // Nếu chọn file mới thì xử lý upload
+    if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
+        $fileTmpPath = $_FILES['avatar']['tmp_name'];
+        $fileName = time() . '_' . basename($_FILES['avatar']['name']);
+        $uploadDir = __DIR__ . '/uploads/';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        $destPath = $uploadDir . $fileName;
+        if (move_uploaded_file($fileTmpPath, $destPath)) {
+            $contactData['avatar'] = '/uploads/' . $fileName;
+        }
+    }
 
     $errors = $contact->validate($contactData);
 
@@ -39,7 +53,7 @@ include_once __DIR__ . '/../src/partials/header.php';
 <body>
   <?php include_once __DIR__ . '/../src/partials/navbar.php' ?>
 
-  <div class="container">
+  <div class="container my-4">
     <?php
     $subtitle = 'Edit contact details.';
     include_once __DIR__ . '/../src/partials/heading.php';
@@ -47,7 +61,16 @@ include_once __DIR__ . '/../src/partials/header.php';
 
     <div class="row">
       <div class="col-md-8 offset-md-2">
-        <form action="/edit.php?id=<?= $contact->id ?>" method="POST">
+        <form action="/edit.php?id=<?= $contact->id ?>" method="POST" enctype="multipart/form-data">
+          
+          <div class="mb-3">
+            <label for="avatar" class="form-label">Avatar</label>
+            <input type="file" name="avatar" class="form-control" id="avatar" accept="image/*">
+            <div class="mt-2">
+              <img id="avatar-preview" src="<?= $contact->avatar ? html_escape($contact->avatar) : '#' ?>" alt="Preview Avatar" class="img-thumbnail <?= $contact->avatar ? '' : 'd-none' ?>" style="max-height: 120px;">
+            </div>
+          </div>
+
           <div class="mb-3">
             <label for="name" class="form-label">Name</label>
             <input type="text" name="name" class="form-control <?= isset($errors['name']) ? 'is-invalid' : '' ?>" id="name" value="<?= html_escape($contact->name) ?>">
@@ -80,5 +103,16 @@ include_once __DIR__ . '/../src/partials/header.php';
   </div>
 
   <?php include_once __DIR__ . '/../src/partials/footer.php' ?>
+
+  <script>
+    document.getElementById('avatar').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      const preview = document.getElementById('avatar-preview');
+      if (file) {
+        preview.src = URL.createObjectURL(file);
+        preview.classList.remove('d-none');
+      }
+    });
+  </script>
 </body>
 </html>
